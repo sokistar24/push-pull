@@ -5,6 +5,10 @@ import argparse, itertools, math, random
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 import numpy as np
+from pathlib import Path
+import argparse
+
+# plus your other imports: Config, run_push, run_pull_wiql, etc.
 
 try:
     import matplotlib.pyplot as plt
@@ -249,20 +253,33 @@ def run_pull_wiql(cfg: Config, d: float, lam: float, runs: int, T: int, warmup: 
         scores.append(total / eff_T)
     return float(np.mean(scores))
 
-def heatmap(d_list, lam_list, vals, title: str, fname: str):
+
+import argparse
+import numpy as np
+from pathlib import Path
+# from your_module import Config, run_push, run_pull_wiql  # etc.
+
+
+def heatmap(d_list, lam_list, vals, title: str, fname: str, results_dir: Path):
     import numpy as np
     import matplotlib.pyplot as plt
+
+    # Ensure results_dir is a Path and exists
+    results_dir = Path(results_dir)
+    results_dir.mkdir(exist_ok=True)
+
+    png_path = results_dir / fname
+    pdf_path = results_dir / fname.replace(".png", ".pdf")
+
     if plt is None:
         print("matplotlib not available; skipping plot.")
         return
 
-    # Ensure axes are sorted and match vals shape (rows=y, cols=x)
-    d_vals   = np.array(sorted(d_list))                  # x-axis (columns)
-    lam_vals = np.array(sorted(lam_list))                # y-axis (rows)
-    Z = np.asarray(vals)
-    assert Z.shape == (lam_vals.size, d_vals.size), "vals must be (len(lam_list), len(d_list))"
+    d_vals   = np.array(sorted(d_list))
+    lam_vals = np.array(sorted(lam_list))
+    Z        = np.asarray(vals)
+    assert Z.shape == (lam_vals.size, d_vals.size)
 
-    # Build boundaries so pcolormesh draws full cells with edges
     def _to_edges(v):
         v = np.asarray(v, dtype=float)
         dv = np.diff(v)
@@ -284,40 +301,32 @@ def heatmap(d_list, lam_list, vals, title: str, fname: str):
         'ytick.labelsize': 16,
     })
 
-    # Draw cells with white borders for the grid effect
     pcm = plt.pcolormesh(
         x_edges, y_edges, Z,
-        shading='flat',              # one colour per cell
-        edgecolors='white',          # grid lines
+        shading='flat',
+        edgecolors='white',
         linewidth=0.5
     )
 
-    cbar = plt.colorbar(pcm, label='Ave Reward', shrink=0.85)
+    cbar = plt.colorbar(pcm, label='Avg Reward', shrink=0.85)
     cbar.ax.tick_params(labelsize=14)
 
     plt.xlabel('Density ($d$)', labelpad=10)
     plt.ylabel('Penalty ($\\lambda$)', labelpad=10)
 
-    # Put ticks exactly at your parameter values
     ax = plt.gca()
     ax.set_xticks(d_vals)
     ax.set_yticks(lam_vals)
 
-    # Optional: rotate x tick labels if they overlap
-    # plt.setp(ax.get_xticklabels(), rotation=0)
-
     plt.tight_layout()
 
-    pdf_fname = fname.replace('.png', '.pdf')
-    plt.savefig(pdf_fname, bbox_inches='tight', format='pdf', dpi=300)
-    plt.savefig(fname, bbox_inches='tight', format='png', dpi=300)
+    plt.savefig(pdf_path, bbox_inches='tight', format='pdf', dpi=300)
+    plt.savefig(png_path, bbox_inches='tight', format='png', dpi=300)
     plt.close()
-    print(f"Saved {pdf_fname}\nSaved {fname}")
+
+    print(f"Saved: {png_path}\nSaved: {pdf_path}")
 
 
-# -----------------------------
-# CLI and main
-# -----------------------------
 def main():
     parser = argparse.ArgumentParser(description="Density × penalty heatmaps: Push vs Pull (WIQL)")
     parser.add_argument('--n_states', type=int, default=5, help='Number of states (default: 5)')
@@ -334,6 +343,13 @@ def main():
     parser.add_argument('--seed', type=int, default=123, help='Base RNG seed')
     args = parser.parse_args()
 
+    # Resolve results/ relative to project root (file is in code/)
+    script_path = Path(__file__).resolve()
+    project_root = script_path.parents[1]        # .. (one level above /code)
+    results_dir = project_root / "results"       # ../results
+    results_dir.mkdir(exist_ok=True)
+    print(f"Saving heatmaps to: {results_dir}")
+
     densities = [float(x) for x in args.densities.split(',')]
     lam_list = [float(x) for x in args.lambdas.split(',')]
     hl_factors = [float(x) for x in args.half_life_factors.split(',')]
@@ -347,14 +363,12 @@ def main():
     print(f"half-life factors: {hl_factors}")
     print("="*60)
 
-    # base config
     base = Config(N=args.num_arms, M=args.num_activations, K=args.n_states,
                   mu=(6.0, 9.0, 12.0, 16.0, 20.0)[:args.n_states],
                   v0=2.0, half_life_factor=hl_factors[0], Hcap_mult=5.0,
                   T=args.time_steps, seed=args.seed)
     base.derive()
 
-    # compute heatmaps for the first half-life factor; loop others in console (no extra plots to keep it simple)
     for idx, hlf in enumerate(hl_factors):
         base.half_life_factor = hlf
         base.derive()
@@ -371,13 +385,31 @@ def main():
                 pull_mat[iL, jD] = pull_avg
                 print(f"d={d:.2f} λ={lam:.2f}  push={push_avg:.4f}  pull={pull_avg:.4f}")
 
-        # plots for the first factor only
         tag = f"hl{hlf:.2f}".replace('.', '')
+
         if idx == 0:
-            heatmap(densities, lam_list, push_mat, f"Push (event) — avg reward [{tag}]", f"heatmap_push_{tag}.png")
-            heatmap(densities, lam_list, pull_mat, f"Pull (WIQL) — avg reward [{tag}]", f"heatmap_pull_{tag}.png")
+            heatmap(
+                densities, lam_list, push_mat,
+                f"Push (event) — avg reward [{tag}]",
+                f"heatmap_push_{tag}.png",
+                results_dir=results_dir
+            )
+            heatmap(
+                densities, lam_list, pull_mat,
+                f"Pull (WIQL) — avg reward [{tag}]",
+                f"heatmap_pull_{tag}.png",
+                results_dir=results_dir
+            )
             diff = pull_mat - push_mat
-            heatmap(densities, lam_list, diff, f"Pull − Push (avg reward) [{tag}]", f"heatmap_diff_{tag}.png")
+            heatmap(
+                densities, lam_list, diff,
+                f"Pull − Push (avg reward) [{tag}]",
+                f"heatmap_diff_{tag}.png",
+                results_dir=results_dir
+            )
+
 
 if __name__ == "__main__":
     main()
+
+

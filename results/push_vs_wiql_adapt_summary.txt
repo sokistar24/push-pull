@@ -1,0 +1,7 @@
+=== AVERAGED METRICS over 10 runs (Push vs Pull-WIQL-Adapt) ===
+Push           : Acc=97.79%  Packets=9.93%  Missed=0.00%  AOII=0.0244
+Pull-WIQL-Adapt: Acc=77.48%  Packets=16.65%  Missed=21.19%  AOII=1.3024
+
+Std deviations:
+Push           : Acc_std=0.00  Packets_std=0.00  Missed_std=0.00  AOII_std=0.0000
+Pull-WIQL-Adapt: Acc_std=0.37  Packets_std=0.00  Missed_std=1.27  AOII_std=0.0893

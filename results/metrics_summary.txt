@@ -1,0 +1,9 @@
+=== METRICS (Three Pull Policies: PlainQ vs WIQL-Adapt vs WIQL-UCB) ===
+     PlainQ:  Acc=68.5%  Packets=10.0%  Missed=45.2%
+ WIQL-Adapt:  Acc=69.8%  Packets=10.0%  Missed=33.7%
+   WIQL-UCB:  Acc=59.7%  Packets=10.0%  Missed=45.8%
+
+Mean AOII:
+PlainQ     : 3.4779
+WIQL-Adapt : 1.9929
+WIQL-UCB   : 5.1267
