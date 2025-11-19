@@ -1,0 +1,10 @@
+Reconstruction RMSE comparison (push vs pull)
+============================================================
+
+method  param_value  recon_rmse
+  pull          0.1    0.627694
+  push          0.1    1.747870
+  pull          0.5    0.613790
+  push          0.5    0.655328
+  pull          1.0    1.233920
+  push          1.0    0.426040

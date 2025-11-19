@@ -1,0 +1,10 @@
+Push vs Pull param sweep summary (M=5)
+================================================================================
+
+method  param_value  M  tx_rate  compression  recon_rmse  push_tx_rmse_z_minus_x1    attempts   successes  collisions  succ_given_attempt  coll_given_attempt
+  pull     0.100000  5 0.035617     0.964383    0.627694                      NaN         NaN         NaN         NaN                 NaN                 NaN
+  push     0.100000  5 0.059900     0.940100    1.747870                 0.032458 7298.000000 3594.000000 3704.000000            0.492464            0.507536
+  pull     0.500000  5 0.014350     0.985650    0.613790                      NaN         NaN         NaN         NaN                 NaN                 NaN
+  push     0.500000  5 0.052600     0.947400    0.655328                 0.048994 5349.000000 3156.000000 2193.000000            0.590017            0.409983
+  pull     1.000000  5 0.008000     0.992000    1.233920                      NaN         NaN         NaN         NaN                 NaN                 NaN
+  push     1.000000  5 0.029317     0.970683    0.426040                 0.049205 2265.000000 1759.000000  506.000000            0.776600            0.223400
